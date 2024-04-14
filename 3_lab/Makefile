@@ -5,9 +5,12 @@ mmkmake:
 
 rmid: mmake
 	./m1
+	make clean
 rmmk: mmkmake
 	./m2
+	make clean
 graf:
-	gnuplot graf.gnu
+	gnuplot graf0.gnu
+	gnuplot graf1.gnu
 clean:
 	rm m1 m2
