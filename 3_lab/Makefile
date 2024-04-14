@@ -7,5 +7,7 @@ rmid: mmake
 	./m1
 rmmk: mmkmake
 	./m2
+graf:
+	gnuplot graf.gnu
 clean:
 	rm m1 m2

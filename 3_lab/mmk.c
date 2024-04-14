@@ -15,12 +15,38 @@ double function(double x, double y){
     return exp(2*x+2*y);
 }
 
-int main(){
-    const int n = 10000000;
-    printf("Numerical integration by Monte Carlo method: n = %d\n", n);
+double s_mmk(const int n, double(*thisfunction)(double, double)){
+    printf("Serial numerical integration by Monte Carlo method: n = %d\n", n);
+    double time = omp_get_wtime();
+    int in = 0;
+    double s = 0;
+    {
+        double s_lock = 0;
+        int in_lock = 0;
+        unsigned int seed = omp_get_thread_num();
+        for (int i = 0; i < n; i++){
+            double x = getrand(&seed) * M_PI;
+            double y = getrand(&seed);
+            if (y <= 1-x){
+                in_lock++;
+                s_lock += thisfunction(x, y);
+            }
+        }
+        s += s_lock;
+        in += in_lock;
+    }
+    time = omp_get_wtime() - time;
+    double v = M_PI * in / n;
+    double res = v * s / in;
+    printf ("%d %.12f\n", 1, time);
+    return time;
+}
+
+void p_mmk(const int n, double(*thisfunction)(double, double), double serial_time){
+    printf("Parallel numerical integration by Monte Carlo method: n = %d\n", n);
     for (int p = 2; p <= 8; p+=2)
     {
-        double t = omp_get_wtime();
+        double time = omp_get_wtime();
         int in = 0;
         double s = 0;
         #pragma omp parallel num_threads(p)
@@ -34,7 +60,7 @@ int main(){
                 double y = getrand(&seed);
                 if (y <= 1-x){
                     in_lock++;
-                    s_lock += function(x, y);
+                    s_lock += thisfunction(x, y);
                 }
             }
             #pragma omp atomic
@@ -42,11 +68,19 @@ int main(){
             #pragma omp atomic
             in += in_lock;
         }
-        t = 0.143214/(omp_get_wtime() - t);
+        time = serial_time/(omp_get_wtime() - time);
+        // time = (omp_get_wtime() - time);
         double v = M_PI * in / n;
         double res = v * s / in;
-        printf ("Result: %.12f, n %d, P = %d, speed (sec.): %.6f\n", res, n, p, t);
+        printf ("%d %.12f\n", p, time);
     }
-    
-        return 0;
+}
+
+int main(){
+    printf("\n");
+    for (int n = 1e7; n <= 1e8 ; n*=10){
+        p_mmk(n, *function, s_mmk(n, *function));
+        printf("\n");
+    }
+    return 0;
 }
