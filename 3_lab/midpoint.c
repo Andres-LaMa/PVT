@@ -9,7 +9,7 @@ double function(double x){
 
 double s_midpoint_method(double a, double b, double(*thisfunction)(double)){
     const double eps = 1e-6;
-    const int n0 = 1e7;
+    const int n0 = 1e9;
     double t = omp_get_wtime();
     printf("\nSerial numerical integration: [%f, %f], n0 = %d, EPS = %f\n", a, b, n0, eps);
     double sq[2];
@@ -38,11 +38,11 @@ double s_midpoint_method(double a, double b, double(*thisfunction)(double)){
 
 void p_midpoint_method(double a, double b, double(*thisfunction)(double), double serial_time){
     const double eps = 1e-6;
-    const int n0 = 10000000;
+    const int n0 = 1e9;
     printf("\nParallel numerical integration: [%f, %f], n0 = %d, EPS = %f\n", a, b, n0, eps);
     for (int p = 2; p <= 8; p+=2){
         double t = omp_get_wtime();
-        double sq[2];
+        double sq[2] = {0};
         #pragma omp parallel num_threads(p)
         {
             int n = n0, k;
@@ -64,7 +64,7 @@ void p_midpoint_method(double a, double b, double(*thisfunction)(double), double
                 #endif
             }
             // #pragma omp master
-            // printf("Result Pi: %.12f, Runge rule: EPS %e, n %d\n", sq[k]*sq[k], eps, n/2);
+            // printf("Result: %.12f, Runge rule: EPS %e, n %d\n", sq[k]*sq[k], eps, n/2);
         }
         t = serial_time/(omp_get_wtime() - t);
         printf("%d %.6f\n", p, t);
